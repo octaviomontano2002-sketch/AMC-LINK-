@@ -1,0 +1,65 @@
+﻿
+InputObject                                                                                   SideIndicator
+-----------                                                                                   -------------
+    let allUsers = JSON.parse(localStorage.getItem('amc_v2026_all_users')) || {};             =>           
+    let db = JSON.parse(localStorage.getItem('amc_v2026_db_final')) || {};                    =>           
+    let bitacora = JSON.parse(localStorage.getItem('samc_bitacora')) ||[];                    =>           
+    let masterLists = JSON.parse(localStorage.getItem('amc_v2026_master')) || {};             =>           
+        localStorage.setItem('amc_v2026_master', JSON.stringify(masterLists));                =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        delete db[courseKey]; localStorage.setItem('amc_v2026_db_final', JSON.stringify(db)); =>           
+        localStorage.setItem('amc_v2026_master', JSON.stringify(masterLists));                =>           
+        localStorage.setItem('amc_v2026_master', JSON.stringify(masterLists));                =>           
+        localStorage.setItem('amc_v2026_master', JSON.stringify(masterLists));                =>           
+        localStorage.setItem('amc_v2026_master', JSON.stringify(masterLists));                =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('samc_cotejo', JSON.stringify(cotejo));                          =>           
+        localStorage.setItem('samc_cotejo', JSON.stringify(cotejo));                          =>           
+        localStorage.setItem('samc_cotejo', JSON.stringify(cotejo));                          =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('samc_bitacora', JSON.stringify(bitacora));                      =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_all_users', JSON.stringify(allUsers));                =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+        localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                       =>           
+            localStorage.setItem('amc_v2026_db_final', JSON.stringify(db));                   =>           
+                                                                                              <=           
+                                                                                              <=           
+                                                                                              <=           
+                                                                                              <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        delete db[courseKey]; guardarEnFirebase();                                            <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+        guardarEnFirebase();                                                                  <=           
+            guardarEnFirebase();                                                              <=           
+
+
