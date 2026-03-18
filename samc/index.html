@@ -56,9 +56,9 @@
             transition: box-shadow 0.4s ease; 
         }
         
-        .reloj-container { position: fixed; bottom: 80px; left: 20px; font-family: 'Cinzel', serif; color: var(--gold); text-align: center; z-index: 1000; background: linear-gradient(145deg, #1a1a24, #2a2a35); padding: 5px 15px; border-radius: 6px; border: 1px solid var(--gold); box-shadow: 0 5px 15px rgba(0,0,0,0.5); pointer-events: none; }
-        #reloj-hora { font-size: 1.2rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; }
-        #reloj-fecha { font-size: 0.65rem; text-transform: uppercase; color: var(--ivory); opacity: 0.9; }
+        .reloj-container { font-family: 'Cinzel', serif; color: var(--gold); text-align: center; }
+        #reloj-hora { font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; margin-bottom: 0; }
+        #reloj-fecha { font-size: 0.6rem; text-transform: uppercase; color: var(--ivory); opacity: 0.8; }
         
         .view { display: none; animation: fadeIn 0.4s ease; }
         .view.active { display: block; }
@@ -212,10 +212,7 @@
 
 
 <div class="container">
-    <div class="reloj-container">
-        <div id="reloj-hora">00:00:00</div>
-        <div id="reloj-fecha">...</div>
-    </div>
+
     
     <!-- LOGIN INTERACTIVO -->
     <div id="view-login" class="view active">
@@ -1161,6 +1158,13 @@
         document.querySelectorAll('.samc-logo-img').forEach(el => el.src = SAMC_LOGO_B64);
         iniciarReloj();
         resetTimerInactividad();
+        
+        // Cargar fecha de actualización dinámica (Netlify Build Date)
+        const elDate = document.getElementById('txtLastUpdate');
+        if (elDate && document.lastModified) {
+            const d = new Date(document.lastModified);
+            elDate.innerText = "Última actualización: " + d.toLocaleDateString('es-BO', {year: 'numeric', month: 'long', day: 'numeric'}) + " " + d.toLocaleTimeString('es-BO', {hour: '2-digit', minute:'2-digit'});
+        }
 
         // Configurar teclas de acceso rápido de inmediato
         const pwdInp = document.getElementById('passInput');
@@ -1380,11 +1384,11 @@
                 card.innerHTML = `
                     <button class="btn-delete-course" onclick="eliminarDocenteAdmin('${k}')" title="Eliminar Docente">✖</button>
                     <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;" onclick="verDocenteComoAdmin('${k}')">
-                        <div class="musical-icon" style="font-family:'Cinzel'; font-size:1.5rem;">◆</div>
-                        <b style="color:var(--dark); font-size:1.1em; margin-bottom: 2px;">${allUsers[k].name}</b>
-                        <small style="color:var(--dark); font-weight:bold; font-size:0.8em; margin-bottom: 5px;">[Usuario: ${k}]</small>
-                        <small style="color:var(--gold); font-weight:bold;">${allUsers[k].access.length} Cursos</small>
-                        <small style="color:gray; margin-top:3px; font-size: 0.75em;">Último acceso: ${allUsers[k].lastLogin || 'Nunca'}</small>
+                        <div class="musical-icon" style="font-family:'Cinzel'; font-size:1.2rem;">◆</div>
+                        <b style="color:var(--dark); font-size:0.95em; margin-bottom: 2px; line-height: 1.2; text-align: center; padding: 0 5px;">${allUsers[k].name}</b>
+                        <small style="color:var(--dark); font-weight:bold; font-size:0.75em; margin-bottom: 5px;">[Usuario: ${k}]</small>
+                        <small style="color:var(--gold); font-weight:bold; font-size:0.8em;">${allUsers[k].access.length} Cursos</small>
+                        <small style="color:gray; margin-top:3px; font-size: 0.7em;">Último acceso: ${allUsers[k].lastLogin || 'Nunca'}</small>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -2681,8 +2685,10 @@
         }
 
         const isEsp = (c.type === "ESPECIALIDAD");
+        const isSuperior = c.n && c.n.includes("Superior");
+        const isManualAddition = (c.type === "ESPECIALIDAD" || c.type === "ORQUESTA" || (c.type === "COLECTIVA" && isSuperior));
         
-        if(!isEsp && c.type !== "ORQUESTA" && !currentUser.isAdmin) { document.getElementById('addStudentBox').style.display = 'none'; } 
+        if(!isManualAddition && !currentUser.isAdmin) { document.getElementById('addStudentBox').style.display = 'none'; } 
         else { document.getElementById('addStudentBox').style.display = 'flex'; }
 
         if (isEsp) {
@@ -2773,10 +2779,12 @@
     function render() {
         const c = db[cursoActivo]; const tbody = document.getElementById('tablaHoy'); tbody.innerHTML = "";
         const isEsp = (c.type === "ESPECIALIDAD");
+        const isSuperior = c.n && c.n.includes("Superior");
+        const isManualAddition = (c.type === "ESPECIALIDAD" || c.type === "ORQUESTA" || (c.type === "COLECTIVA" && isSuperior));
 
         let countP = 0, countF = 0, countL = 0;
 
-        document.getElementById('colDelete').style.display = (isEsp || c.type === "ORQUESTA" || currentUser.isAdmin) ? 'table-cell' : 'none';
+        document.getElementById('colDelete').style.display = (isManualAddition || currentUser.isAdmin) ? 'table-cell' : 'none';
 
         c.alumnos.forEach((a, index) => {
             const b = calcularAsistBimestres(a.full);
@@ -2817,9 +2825,9 @@
                  timeLabel = `<div class="time-box time-box-empty"></div>`;
             }
             
-            let courseOriginLabel = (isEsp || c.type === "ORQUESTA") ? `<br><small style="color:var(--gray);">${getCursoMaestroDeAlumno(a.full)}</small>` : '';
+            let courseOriginLabel = isManualAddition ? `<br><small style="color:var(--gray);">${getCursoMaestroDeAlumno(a.full)}</small>` : '';
             let deleteBtnHTML = "";
-            if(isEsp || c.type === "ORQUESTA" || currentUser.isAdmin) {
+            if(isManualAddition || currentUser.isAdmin) {
                 deleteBtnHTML = `<td style="text-align:center; vertical-align:middle;"><button class="btn-del" onclick="eliminarAlumno('${a.full}')" title="Quitar">X</button></td>`;
             } else { deleteBtnHTML = `<td class="hide-col"></td>`; }
 
@@ -2847,7 +2855,7 @@
         });
 
         const countersBox = document.getElementById('colectivaCountersBox');
-        if (!isEsp) {
+        if (!isWeekly) {
             countersBox.style.display = 'flex';
             countersBox.innerHTML = `
                 <div style="color:var(--green);">PRESENTES: ${countP}</div>
@@ -3326,11 +3334,17 @@
 <div id="widgetActividades" class="widget-actividades"></div>
 
 <!-- FOOTER INTEGRADO Y BOTÓN DE ACTUALIZACIÓN -->
-<div style="position: fixed; bottom: 0; left: 0; width: 100%; padding: 12px 30px; background: rgba(20, 20, 30, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--gold); z-index: 10000; box-sizing: border-box; font-family: 'Inter', sans-serif;">
-    <div style="color: rgba(255,255,255,1); font-size: 0.95rem; font-weight: bold; letter-spacing: 0.5px;">
-        SAAM© Versión 31.0 <span style="font-weight: normal; opacity: 0.7; margin-left: 8px; font-size: 0.9em;">| Última actualización: 17 de Marzo, 2026</span>
+<div style="position: relative; margin-top: 40px; width: 100%; padding: 12px 30px; background: rgba(20, 20, 30, 0.95); display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--gold); box-sizing: border-box; font-family: 'Inter', sans-serif; flex-wrap: wrap; gap: 15px;">
+    <div style="color: rgba(255,255,255,1); font-size: 0.95rem; font-weight: bold; letter-spacing: 0.5px; flex: 1; min-width: 250px;">
+        SAAM© Versión 31.0 <br><span id="txtLastUpdate" style="font-weight: normal; opacity: 0.7; font-size: 0.85em;">Última actualización: Validando datos del servidor...</span>
     </div>
     
+    <div class="reloj-container" style="flex: 1; min-width: 200px;">
+        <div id="reloj-hora">00:00:00</div>
+        <div id="reloj-fecha">...</div>
+    </div>
+
+    <div style="flex: 1; display:flex; justify-content:flex-end; min-width: 200px;">
     <button onclick="forzarActualizacion()" style="background: linear-gradient(135deg, var(--green) 0%, #1b5e20 100%); color: white; padding: 10px 24px; border-radius: 30px; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; border: 1px solid #c8e6c9; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -3339,6 +3353,7 @@
         </svg>
         ACTUALIZAR DATOS
     </button>
+    </div>
 </div>
 
 </body>
