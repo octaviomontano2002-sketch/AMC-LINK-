@@ -561,6 +561,18 @@
                 <h3 id="displayDocente" style="color: var(--dark); font-family:'Cinzel'; text-transform:uppercase; margin:0; font-size: 1.2rem;">DOCENTE</h3>
             </div>
         </div>
+
+        <div id="alarmGracePeriod" style="display:none; margin: 0 auto 25px auto; max-width: 1000px; background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(183, 28, 28, 0.95)); color: white; padding: 18px 25px; border-radius: 12px; text-align: center; font-family: 'Inter', sans-serif; border: 2px solid #ff5252; box-shadow: 0 5px 20px rgba(220,53,69,0.4); animation: pulse 2s infinite;">
+            <div style="font-size: 1.15em; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; font-family: 'Cinzel', serif;">
+                <span style="font-size: 1.3em; vertical-align: middle;">⚠️</span> ¡AVISO IMPORTANTE DE DIRECCIÓN!
+            </div>
+            <div style="font-size: 0.95em; line-height: 1.5;">
+                Tienes una <b style="color:#ffeb3b; text-transform:uppercase;">Gabela Excepcional</b> para rellenar o igualar tu registro histórico de Asistencia.<br>
+                Esta concesión se cerrará irrevocablemente el <b style="color:#ffeb3b; font-size: 1.1em;">SÁBADO 28 DE MARZO DE 2026 A LAS 23:59</b>.<br>
+                <small style="opacity: 0.9;">A partir de ese momento, el sistema volverá a bloquear las ediciones de días pasados de forma permanente.</small>
+            </div>
+        </div>
+
         <!-- MODULE: ALERTS / UPCOMING ACTIVITIES -->
         <div id="moduleActividades" style="display:none; max-width: 1000px; margin: 0 auto 30px auto; background: linear-gradient(135deg, rgba(21, 101, 192, 0.05), rgba(21, 101, 192, 0.1)); border: 1px solid rgba(21, 101, 192, 0.3); border-radius: 8px; padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(21, 101, 192, 0.2); padding-bottom: 8px;">
@@ -742,6 +754,16 @@
         </div>
         
         <div style="max-width: 700px; margin: auto; background: white; padding: 40px; border: 1px solid rgba(197,160,89,0.3); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+            
+            <div style="background: rgba(197, 160, 89, 0.05); padding: 20px; border-left: 4px solid var(--gold); margin-bottom: 25px; font-size: 0.9em; color: var(--dark); border-radius: 4px;">
+                <h5 style="margin-top:0; font-family: 'Cinzel'; color: var(--gold); font-size: 1.1em;">GUÍA RÁPIDA DE CREACIÓN</h5>
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+                    <li><b>Materias Oficiales (Teoría, Práctica):</b> Elija "Materia Colectiva". La lista oficial de alumnos se cargará automáticamente.</li>
+                    <li><b>Instrumentos:</b> Elija "Especialidad". Luego, añada a sus alumnos uno por uno buscándolos en la base de datos general.</li>
+                    <li><b>Coro o Vientos/Cuerdas:</b> Elija "Orquesta". Funciona igual que Especialidad, pero el registro de asistencia es por día.</li>
+                    <li><b>¿Dicta una materia junto a otro profesor?</b> <span style="color:var(--red); font-weight:bold;">NO</span> cree la materia de nuevo. Pida al otro profesor que use el botón <b style="color: var(--gold);">"Compartir"</b> (dentro de la materia ya creada) e ingrese su Nombre de Usuario para vincularlo a su tablero.</li>
+                </ul>
+            </div>
             
             <div class="input-group">
                 <label style="font-weight:bold; font-size:0.9em; color:var(--dark); display:block; margin-bottom:10px;">TIPO DE REGISTRO DE ASISTENCIA:</label>
@@ -1062,25 +1084,41 @@
     function guardarEnFirebase(esMigracion = false) {
         guardarOpcionalLocalStorage(); // SIEMPRE guardar en caché local primero por velocidad
 
-        if (!isCloudEnabled) {
+        if (!isCloudEnabled || !database) {
             if(!esMigracion) console.log("Datos guardados sólo en memoria de Navegador (Falta API_KEY).");
             return;
         }
 
-        database.ref('samc_data').set({
-            allUsers: allUsers,
-            db: db,
-            bitacora: bitacora,
-            bitacoraLicencias: bitacoraLicencias,
-            masterLists: masterLists,
-            cotejo: cotejo,
-            actividades: actividades
-        }).then(() => {
-            if(!esMigracion) console.log("Copia exacta respaldada en la Nube de Firebase.");
-        }).catch((error) => {
-            console.error("Fallo de sincronización WiFi/Red:", error);
-            showToast("Tus cambios se guardaron localmente, pero no en la nube (Revisa tu red).", "error");
-        });
+        if (esMigracion) {
+            database.ref('samc_data').set({
+                allUsers: allUsers,
+                db: db,
+                bitacora: bitacora,
+                bitacoraLicencias: bitacoraLicencias,
+                masterLists: masterLists,
+                cotejo: cotejo,
+                actividades: actividades
+            }).then(() => {
+                console.log("Migración inicial completada.");
+            }).catch((error) => console.error("Fallo de red:", error));
+        } else {
+            let updates = {};
+            updates['bitacora'] = bitacora;
+            updates['bitacoraLicencias'] = bitacoraLicencias;
+            updates['masterLists'] = masterLists;
+            updates['cotejo'] = cotejo;
+            updates['actividades'] = actividades;
+            
+            Object.keys(allUsers).forEach(k => { updates[`allUsers/${k}`] = allUsers[k]; });
+            Object.keys(db).forEach(k => { updates[`db/${k}`] = db[k]; });
+
+            database.ref('samc_data').update(updates).then(() => {
+                console.log("Sincronización de nodos de alto nivel completada.");
+            }).catch((error) => {
+                console.error("Fallo de sincronización WiFi/Red:", error);
+                showToast("Tus cambios guardados localmente. Esperando reconexión a Firebase...", "error");
+            });
+        }
     }
 
     let currentUser = null;
@@ -1092,6 +1130,16 @@
     let timeoutInactividad;
     let alumnoARecibirMotivo = null;
     let tipoMotivoModal = null;
+
+    function firebaseSaveCourse(id) {
+        guardarOpcionalLocalStorage();
+        if(isCloudEnabled && database) database.ref(`samc_data/db/${id}`).set(db[id]).catch(e => console.error(e));
+    }
+    
+    function firebaseUpdateUserAccess(userKey) {
+        guardarOpcionalLocalStorage();
+        if(isCloudEnabled && database) database.ref(`samc_data/allUsers/${userKey}/access`).set(allUsers[userKey].access).catch(console.error);
+    }
 
     function showToast(msg, type='success') {
         const container = document.getElementById('toastContainer');
@@ -1251,7 +1299,8 @@
 
         const fullName = `PROF. ${name} ${lastName}`.toUpperCase();
         allUsers[user] = { pass: pass, name: fullName, access:[], secret: secret, isAdmin: false };
-        guardarEnFirebase();
+        guardarOpcionalLocalStorage();
+        if(isCloudEnabled && database) database.ref(`samc_data/allUsers/${user}`).set(allUsers[user]);
         showToast("Cuenta creada exitosamente. Inicia sesión."); ir('view-login');
     }
 
@@ -1294,7 +1343,8 @@
         allUsers[u].pass = p;
         allUsers[u].secret = s;
         
-        guardarEnFirebase();
+        guardarOpcionalLocalStorage();
+        if(isCloudEnabled && database) database.ref(`samc_data/allUsers/${u}`).update({ pass: p, secret: s });
         showToast("Seguridad actualizada. Cerrando sesión...");
         setTimeout(() => {
             localStorage.removeItem('samc_session_key');
@@ -1354,7 +1404,11 @@
             // Tracking de conexión
             const nowTime = new Date().toLocaleString('es-BO', {dateStyle: 'short', timeStyle: 'short'});
             userObj.lastLogin = nowTime;
-            if(window.guardarEnFirebase) guardarEnFirebase();
+            
+            guardarOpcionalLocalStorage();
+            if(isCloudEnabled && database) {
+                database.ref(`samc_data/allUsers/${userKey}`).update({ lastLogin: nowTime });
+            }
 
             if(currentUser.isAdmin) {
                 activeTeacherKey = null;
@@ -1524,6 +1578,17 @@
         
         // Widget Fijo Inferior Derecho
         const widgetAct = document.getElementById('widgetActividades');
+
+        // ALARMA GRACE PERIOD (FECHA LÍMITE DE HISTORIAL)
+        const alarmGracePeriod = document.getElementById('alarmGracePeriod');
+        if (alarmGracePeriod) {
+            const gracePeriodEnd = new Date(2026, 2, 28, 23, 59, 59); // Mes 2 = Marzo
+            if (new Date() <= gracePeriodEnd && !tUser.isAdmin) {
+                alarmGracePeriod.style.display = 'block';
+            } else {
+                alarmGracePeriod.style.display = 'none';
+            }
+        }
 
         if(actList && modAct) {
             actList.innerHTML = '';
@@ -2535,10 +2600,9 @@
             db[newId].alumnos.push({ full: aluObj.full });
             db[newId].reg[aluObj.full] = {};
         });
-
-        guardarEnFirebase();
+        firebaseSaveCourse(newId);
         allUsers[targetTeacher].access.push(newId);
-        guardarEnFirebase();
+        firebaseUpdateUserAccess(targetTeacher);
 
         document.getElementById('newCourseNameSelect').value = ''; 
         document.getElementById('newCourseNameText').value = ''; 
@@ -2563,7 +2627,7 @@
         if (newM === null) return;
         
         c.n = newN.trim() || c.n; c.m = newM.trim() || c.m;
-        guardarEnFirebase();
+        firebaseSaveCourse(cursoActivo);
         document.getElementById('displayCurso').innerText = c.n; document.getElementById('displayMateria').innerText = c.m;
         showToast("Detalles del curso actualizados.");
     }
@@ -2576,7 +2640,7 @@
         if(allUsers[u].access.includes(cursoActivo)) { showToast("Este curso ya está en el tablero de ese docente.", "info"); return; }
         
         allUsers[u].access.push(cursoActivo);
-        guardarEnFirebase();
+        firebaseUpdateUserAccess(u);
         showToast(`Clase compartida exitosamente con ${allUsers[u].name}`);
     }
 
@@ -2764,7 +2828,8 @@
         c.alumnos.push({ full: nombreStr });
         ordenarAlumnos(c);
         c.reg[nombreStr] = {};
-        guardarEnFirebase();
+        
+        firebaseSaveCourse(cursoActivo);
         input.value = ""; cargarAsistenciaPorFecha();
         showToast("Estudiante añadido al curso.");
     }
@@ -2773,7 +2838,8 @@
         if (!confirm(`¿Eliminar permanentemente a "${nombre}" de este curso?`)) return;
         db[cursoActivo].alumnos = db[cursoActivo].alumnos.filter(a => a.full !== nombre);
         delete db[cursoActivo].reg[nombre]; delete windowStatus[nombre];
-        guardarEnFirebase();
+        
+        firebaseSaveCourse(cursoActivo);
         showToast("Estudiante removido de la clase."); cargarAsistenciaPorFecha();
     }
 
@@ -2799,9 +2865,12 @@
             else if(currentStat === 'L') countL++;
 
             let botonesHTML = '';
-            
-            const isDateLocked = !currentUser.isAdmin && (isEsp ? document.getElementById('weekInput').value !== getISOWeekString(new Date()) : document.getElementById('calendarInput').value !== new Date().toISOString().split('T')[0]);
-            const lockMsg = "Solo Administración puede alterar registros de días pasados.";
+            const gracePeriodEnd = new Date(2026, 2, 28, 23, 59, 59); // Mes 2 es Marzo
+            const now = new Date();
+            const inGracePeriod = now <= gracePeriodEnd;
+            const isLockedPast = (isEsp ? document.getElementById('weekInput').value !== getISOWeekString(now) : document.getElementById('calendarInput').value !== now.toISOString().split('T')[0]);
+            const isDateLocked = !currentUser.isAdmin && !inGracePeriod && isLockedPast;
+            const lockMsg = inGracePeriod ? "Aviso: Grace Period activo." : "Solo Administración puede alterar registros de días pasados.";
 
             ['P','F','R','L'].forEach(st => {
                 if(!currentUser.isAdmin && st === 'L') {
@@ -3032,7 +3101,23 @@
         if(!c.notas) c.notas = {}; if(!c.notasAdmin) c.notasAdmin = {}; 
         if(currentUser.isAdmin) { c.notasAdmin[fecha] = document.getElementById('adminNotes').value; } 
         else { c.notas[fecha] = document.getElementById('teacherNotes').value; }
-        guardarEnFirebase();
+        
+        guardarOpcionalLocalStorage();
+        if (isCloudEnabled && database) {
+            const updates = {};
+            updates[`db/${cursoActivo}/fechas`] = c.fechas;
+            if(c.notas) updates[`db/${cursoActivo}/notas/${fecha}`] = c.notas[fecha] || "";
+            if(c.notasAdmin) updates[`db/${cursoActivo}/notasAdmin/${fecha}`] = c.notasAdmin[fecha] || "";
+            if(c.initTime) updates[`db/${cursoActivo}/initTime`] = c.initTime;
+            
+            c.alumnos.forEach(a => { 
+                updates[`db/${cursoActivo}/reg/${a.full}/${fecha}`] = windowStatus[a.full]; 
+                if (c.horasInd && c.horasInd[a.full]) {
+                    updates[`db/${cursoActivo}/horasInd/${a.full}/${fecha}`] = windowTimes[a.full] || null;
+                }
+            });
+            database.ref('samc_data').update(updates).catch(e => console.error(e));
+        }
     }
 
     function registrarAlerta() { 
