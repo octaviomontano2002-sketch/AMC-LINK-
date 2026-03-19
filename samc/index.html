@@ -1858,7 +1858,7 @@
                         if(c.horasInd) delete c.horasInd[aluFull];
                     }
                 });
-                c.alumnos.sort((a, b) => a.full.localeCompare(b.full));
+                ordenarAlumnos(c);
             }
         });
         guardarEnFirebase();
@@ -2522,28 +2522,7 @@
         if(!cName || cName === "") { showToast("Debes seleccionar o escribir el nombre del curso.", "error"); return; }
         if(!cSubj) { showToast("La materia es obligatoria.", "error"); return; }
 
-        let existingSharedKey = null;
-        Object.keys(db).forEach(k => {
-            if (db[k].n === cName && db[k].m === cSubj && db[k].type === cType) {
-                existingSharedKey = k;
-            }
-        });
 
-        if (existingSharedKey) {
-            if (!allUsers[targetTeacher].access.includes(existingSharedKey)) {
-                allUsers[targetTeacher].access.push(existingSharedKey);
-                guardarEnFirebase();
-                showToast(`Curso Vinculado: Se ha unido al registro compartido de ${cName} - ${cSubj}.`);
-            } else {
-                showToast("Ya tienes este curso en tu tablero.", "error");
-            }
-            document.getElementById('newCourseNameSelect').value = ''; 
-            document.getElementById('newCourseNameText').value = ''; 
-            document.getElementById('newCourseSubject').value = '';
-            btn.innerText = "AGREGAR CURSO AL TABLERO"; btn.disabled = false;
-            mostrarMenu(targetTeacher); ir('view-welcome');
-            return;
-        }
 
         btn.innerText = "PROCESANDO..."; btn.disabled = true;
         let alumLista =[];
@@ -2656,8 +2635,31 @@
 
     function calcularAsistBimestres(alu) { return calcularAsistBimestresGlobal(db[cursoActivo], alu); }
 
+    function ordenarAlumnos(c) {
+        if (!c || !c.alumnos) return;
+        const isSuperior = c.n && String(c.n).includes("Superior");
+        const isManualAddition = (c.type === "ESPECIALIDAD" || c.type === "ORQUESTA" || (c.type === "COLECTIVA" && isSuperior));
+        
+        c.alumnos.sort((a, b) => {
+            if (isManualAddition) {
+                const cA = getCursoMaestroDeAlumno(a.full);
+                const cB = getCursoMaestroDeAlumno(b.full);
+                const iA = CURSOS_OFICIALES.indexOf(cA);
+                const iB = CURSOS_OFICIALES.indexOf(cB);
+                if (iA !== iB) {
+                    if (iA === -1) return 1;
+                    if (iB === -1) return -1;
+                    return iA - iB;
+                }
+            }
+            return a.full.localeCompare(b.full);
+        });
+    }
+
     function abrirCurso(id) {
         cursoActivo = id; const c = db[id];
+        if (!c) { showToast("Error: El curso no existe.", "error"); return; }
+        ordenarAlumnos(c);
         if (!c.horasInd) c.horasInd = {};
         if (!c.initTime) c.initTime = {};
         if (!c.notas) c.notas = {};
@@ -2760,7 +2762,7 @@
         if (c.alumnos.find(a => a.full === nombreStr)) { showToast("El estudiante ya existe en este curso.", "error"); return; }
         
         c.alumnos.push({ full: nombreStr });
-        c.alumnos.sort((a, b) => a.full.localeCompare(b.full));
+        ordenarAlumnos(c);
         c.reg[nombreStr] = {};
         guardarEnFirebase();
         input.value = ""; cargarAsistenciaPorFecha();
@@ -2785,6 +2787,8 @@
         let countP = 0, countF = 0, countL = 0;
 
         document.getElementById('colDelete').style.display = (isManualAddition || currentUser.isAdmin) ? 'table-cell' : 'none';
+
+        let currentCourseOrigin = null;
 
         c.alumnos.forEach((a, index) => {
             const b = calcularAsistBimestres(a.full);
@@ -2830,6 +2834,18 @@
             if(isManualAddition || currentUser.isAdmin) {
                 deleteBtnHTML = `<td style="text-align:center; vertical-align:middle;"><button class="btn-del" onclick="eliminarAlumno('${a.full}')" title="Quitar">X</button></td>`;
             } else { deleteBtnHTML = `<td class="hide-col"></td>`; }
+
+            if (isManualAddition) {
+                const courseOrigin = getCursoMaestroDeAlumno(a.full);
+                if (currentCourseOrigin !== courseOrigin) {
+                    currentCourseOrigin = courseOrigin;
+                    const divider = document.createElement('tr');
+                    divider.innerHTML = `<td colspan="7" style="background: rgba(197, 160, 89, 0.1); color: var(--gold); font-family: 'Cinzel'; font-weight: bold; text-align: center; border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold); letter-spacing: 2px; padding: 10px 0; font-size: 1.05em;">
+                        ◆ ${courseOrigin || 'SIN CURSO OFICIAL ASIGNADO'} ◆
+                    </td>`;
+                    tbody.appendChild(divider);
+                }
+            }
 
             let p = getParsedStudent(a.full);
             const tr = document.createElement('tr');
